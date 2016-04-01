@@ -1,3 +1,6 @@
+#AlphaMinicheses
+This is Sheng Lundquist's copy of the repo teaching-minichess (https://github.com/CodeRect/teaching-minichess.git)
+
 #teaching-minichess
 this project provides the framework for the advanced artificial intelligence class, in which an artificial chess player is ought to be implemented.
 
