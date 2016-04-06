@@ -19,7 +19,7 @@
 		
 		<link rel="stylesheet" type="text/css" href="/assets/fontawesome.css" />
 		
-		<style id="idStylesheet_General" type="text/css">
+		<style type="text/css">
 			body {
 				cursor:default;
 				
@@ -264,6 +264,7 @@
 						'success': function(objectData) {
 							chess_call_board();
 							chess_call_winner();
+							chess_call_eval();
 							chess_call_moves();
 						},
 						'complete': function() {
@@ -314,6 +315,20 @@
 					});
 				};
 				
+				var chess_call_eval = function() {
+					jQuery.ajax({
+						'async': true,
+						'type': 'GET',
+						'url': '/chess_eval',
+						'dataType': 'json',
+						'success': function(objectData) {
+							jQuery('#idChess_Eval')
+								.text(objectData.intReturn)
+							;
+						}
+					});
+				};
+				
 				var chess_call_moves = function() {
 					jQuery.ajax({
 						'async': true,
@@ -332,7 +347,7 @@
 							for (var intFor1 = 0; intFor1 < chess_strMoves.length; intFor1 += 1) {
 								if (chess_strMoves[intFor1].substr(0, 2) === chess_strInput) {
 									var intX = chess_strMoves[intFor1].charCodeAt(3) - ('a').charCodeAt(0);
-									var intY = chess_strMoves[intFor1].charCodeAt(4) - ('1').charCodeAt(0);
+									var intY = ('6').charCodeAt(0) - chess_strMoves[intFor1].charCodeAt(4);
 									
 									jQuery('#idChess_Board').find('tr').eq(intY).find('td').eq(intX)
 										.css({
@@ -404,7 +419,7 @@
 							var intX = jQuery(this).index();
 							var intY = jQuery(this).parent().index();
 							
-							var strInput = String.fromCharCode(('a').charCodeAt(0) + intX, ('1').charCodeAt(0) + intY);
+							var strInput = String.fromCharCode(('a').charCodeAt(0) + intX, ('6').charCodeAt(0) - intY);
 							var strInputPrevious = chess_strInput;
 							
 							if (chess_strMoves.indexOf(strInputPrevious + '-' + strInput) === -1) {
@@ -505,12 +520,12 @@
 				}
 				
 				var test_strFunction = '';
-				var test_dblRdtscp = [];
+				var test_intBench = [];
 				
 				var test_call = function(strFunction, strParameters) {
 					if (test_strFunction !== strFunction) {
 						test_strFunction = strFunction;
-						test_dblRdtscp = [];
+						test_intBench = [];
 					}
 					
 					var strUrl = '/' + strFunction;
@@ -533,14 +548,14 @@
 						'url': strUrl,
 						'dataType': 'json',
 						'success': function(objectData) {
-							test_dblRdtscp.push(objectData.dblRdtscp);
+							test_intBench.push(objectData.intBench);
 							
 							jQuery('#idTest_Return_Return')
 								.text(objectData.boolReturn)
 							;
 							
-							jQuery('#idTest_Return_Rdtscp')
-								.text(objectData.dblRdtscp.toFixed(3))
+							jQuery('#idTest_Return_Bench')
+								.text(objectData.intBench.toFixed(3))
 							;
 							
 							Plotly.newPlot('idTest_Boxplot', [{
@@ -549,7 +564,7 @@
 								'boxpoints': 'all',
 								'pointpos': 2.0,
 								'jitter': 0.0,
-								'y': test_dblRdtscp,
+								'y': test_intBench,
 								'hoverinfo': 'none'
 							}], {
 								'showlegend': false,
@@ -887,6 +902,11 @@
 								<div class="form-control" id="idChess_Winner"></div>
 							</div>
 							
+							<div class="input-group">
+								<div class="input-group-addon">intEval:</div>
+								<div class="form-control" id="idChess_Eval"></div>
+							</div>
+							
 							<table id="idChess_Board">
 								<tr><td></td><td></td><td></td><td></td><td></td></tr>
 								<tr><td></td><td></td><td></td><td></td><td></td></tr>
@@ -1074,8 +1094,8 @@
 							</div>
 							
 							<div class="input-group">
-								<div class="input-group-addon">dblRdtscp:</div>
-								<div class="form-control" id="idTest_Return_Rdtscp"></div>
+								<div class="input-group-addon">intBench:</div>
+								<div class="form-control" id="idTest_Return_Bench"></div>
 							</div>
 							
 							<div id="idTest_Boxplot"></div>
