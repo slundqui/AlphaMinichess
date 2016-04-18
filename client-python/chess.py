@@ -21,7 +21,12 @@ def chess_reset():
     global g_board
     global g_turnNum
     global g_whosTurn
-    g_board = [['k', 'q', 'b', 'n', 'r'], ['p', 'p', 'p', 'p', 'p'], ['.', '.', '.', '.', '.'], ['.', '.', '.', '.', '.'], ['P', 'P', 'P', 'P', 'P'], ['R', 'N', 'B', 'Q', 'K']]
+    g_board = [['k', 'q', 'b', 'n', 'r'],
+               ['p', 'p', 'p', 'p', 'p'],
+               ['.', '.', '.', '.', '.'],
+               ['.', '.', '.', '.', '.'],
+               ['P', 'P', 'P', 'P', 'P'],
+               ['R', 'N', 'B', 'Q', 'K']]
     g_turnNum = 1
     g_whosTurn = 'W'
 
