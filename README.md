@@ -94,7 +94,7 @@ java -ea -jar client.jar
 once the client is started, it should automatically connect to the framework. of course, a the framework needs to be executed concurrently to allow this interconnection to happen. after the client as well as the framework are being executed cooperatively, you should be able to access the webinterface and to interact with the client through the said graphical user interface.
 
 ###`client-python`
-in order to be able to use the python client, it is necessary to install the `pyzmq` module. this has already been done for the machines in the linux lab, but you can use `pip` to install it on your own machine. should you be unable to install this additional module, i am afraid that there will not be individual support to resolve this issue. as mentioned earlier, you always have the option to use the correctly configured machines in the linux lab.
+in order to be able to use the python client, it is necessary to install the `pyzmq` module. this has already been done for the machines in the linux lab, but you can use `pip` to install it on your own machine. should you be unable to install this additional module, make sure that you have `python-dev` installed. i am afraid that there will not be individual support to resolve issues that are related to appropriately setting up your environment. as mentioned earlier, you always have the option to use the correctly configured machines in the linux lab.
 
 ```
 pip install pyzmq
@@ -107,6 +107,78 @@ python main.py
 ```
 
 once the client is started, it should automatically connect to the framework. of course, a the framework needs to be executed concurrently to allow this interconnection to happen. after the client as well as the framework are being executed cooperatively, you should be able to access the webinterface and to interact with the client through the said graphical user interface.
+
+##example
+to give a better impression of what the textual format is supposed to look like, an brief example is given below.
+
+```
+			b1-c3:		a5-a4:		b2-b3:		c5-c4:		a2-a3:		a4-b3:
+
+1 W			1 B			2 W			2 B			3 W			3 B			4 W
+kqbnr		kqbnr		kqbnr		kqbnr		kqbnr		kqbnr		kqbnr
+ppppp		ppppp		.pppp		.pppp		.p.pp		.p.pp		.p.pp
+.....		.....		p....		p....		p.p..		p.p..		..p..
+.....		..N..		..N..		.PN..		.PN..		PPN..		PpN..
+PPPPP		PPPPP		PPPPP		P.PPP		P.PPP		..PPP		..PPP
+RNBQK		R.BQK		R.BQK		R.BQK		R.BQK		R.BQK		R.BQK
+```
+
+##functions
+to obtain a fully functioning client, it is required to implement various functions. these functions provide a well defined interface, such that the framework can communicate with a client in a well defined format.
+
+###`chess_reset`
+this section is still under construction. you can in the meantime consult the slides for a description of this function.
+
+###`chess_boardGet`
+this section is still under construction. you can in the meantime consult the slides for a description of this function.
+
+###`chess_boardSet`
+this section is still under construction. you can in the meantime consult the slides for a description of this function.
+
+###`chess_winner`
+this section is still under construction. you can in the meantime consult the slides for a description of this function.
+
+###`chess_isValid`
+this section is still under construction. you can in the meantime consult the slides for a description of this function.
+
+###`chess_isEnemy`
+this section is still under construction. you can in the meantime consult the slides for a description of this function.
+
+###`chess_isOwn`
+this section is still under construction. you can in the meantime consult the slides for a description of this function.
+
+###`chess_isNothing`
+this section is still under construction. you can in the meantime consult the slides for a description of this function.
+
+###`chess_eval`
+this section is still under construction. you can in the meantime consult the slides for a description of this function.
+
+###`chess_moves`
+this section is still under construction. you can in the meantime consult the slides for a description of this function.
+
+###`chess_movesShuffled`
+this section is still under construction. you can in the meantime consult the slides for a description of this function.
+
+###`chess_movesEvaluated`
+this section is still under construction. you can in the meantime consult the slides for a description of this function.
+
+###`chess_move`
+this section is still under construction. you can in the meantime consult the slides for a description of this function.
+
+###`chess_moveRandom`
+this section is still under construction. you can in the meantime consult the slides for a description of this function.
+
+###`chess_moveGreedy`
+this section is still under construction. you can in the meantime consult the slides for a description of this function.
+
+###`chess_moveNegamax`
+this section is still under construction. you can in the meantime consult the slides for a description of this function.
+
+###`chess_moveAlphabeta`
+this section is still under construction. you can in the meantime consult the slides for a description of this function.
+
+###`chess_undo`
+this section is still under construction. you can in the meantime consult the slides for a description of this function.
 
 ##test cases
 note that the more advanced test cases rely on the basic test cases to succeed. for this reason, the most advanced test case `test_moveAlphabeta` does succeed even with the provided empty clients. other test cases like `test_moveNegamax` might not halt without a correct implementation of the basic functions. the grading will therefore not only evaluate newly implemented features, but furthermore take the basic functionalities into consideration as well.
