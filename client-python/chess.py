@@ -3,17 +3,58 @@ import pdb
 
 ##########################################################
 
-#Global variables
+#Debug variable, turn off for speed
+DEBUG = True
+
+#Parameters
 #Chess board is 6x5 board
-#Initializing as all empty spaces
 numY = 6
 numX = 5
 maxTurnsDraw = 40
 
+#Defines the score for each piece.
+#Note that since the game is symetrical, only lowercase pieces are evaluated
+#Range goes from 1 to 100 with the exception of the king
+#TODO, adjust this with maybe the positions of each piece as well
+pieceToPoint= {
+    'k': 100000,
+    'q': 100,
+    'b': 40,
+    'n': 20,
+    'r': 50,
+    'p': 10
+}
+
+#Global state variables
+#Initializing as all empty spaces
 g_board = [["." for i in range(numX)] for j in range(numY)]
 g_turnNum = 1
 g_whosTurn = "W"
 
+#Function to change from a string to an index, e.g. a1 to (5, 0)
+def moveToIdx(inStr):
+    if(DEBUG):
+        assert(len(inStr) == 2)
+    #Note that the matrix is indexed by row first then column
+    #whereas the instring is indexed by column first than row
+    #Additionally, rows are labeled from bottom to top in string,
+    #but from top to bottom in matrix format
+
+    #This works out since inStr is 1 indexed.
+    yIdx = numY - int(inStr[1])
+    #Ord changes a letter to the corresponding ascii number, with an offset of 97
+    xIdx = ord(inStr[0]) - 97
+
+    return (yIdx, xIdx)
+
+#Function to change from an index to a string, e.g. (5, 0) to a1
+def idxToMove(inMove):
+    if(DEBUG):
+        assert(len(inMove) == 2)
+    (yIdx, xIdx) = inMove
+    strLabel = chr(xIdx + ord('a'))
+    numLabel = str(numY - yIdx)
+    return strLabel + numLabel
 
 # reset the state of the game / your internal variables - note that this function is highly dependent on your implementation
 def chess_reset():
@@ -21,6 +62,7 @@ def chess_reset():
     global g_board
     global g_turnNum
     global g_whosTurn
+    #Lowercase is black, uppercase is white
     g_board = [['k', 'q', 'b', 'n', 'r'],
                ['p', 'p', 'p', 'p', 'p'],
                ['.', '.', '.', '.', '.'],
@@ -40,13 +82,6 @@ def chess_boardGet():
         for x in range(numX):
             strOut += g_board[y][x]
         strOut += "\n"
-
-    #strOut += 'kqbnr\n'
-    #strOut += 'ppppp\n'
-    #strOut += '.....\n'
-    #strOut += '.....\n'
-    #strOut += 'PPPPP\n'
-    #strOut += 'RNBQK\n'
 
     return strOut
 
@@ -98,25 +133,32 @@ def chess_winner():
     else:
         return '?'
 
+#Various wrapper functions for taking tuples as moves
+def isValid(move):
+    return chess_isValid(move[1], move[0])
+def isEmpty(move):
+    return chess_isNothing(g_board[move[0]][move[1]])
+def isOwn(move):
+    return chess_isOwn(g_board[move[0]][move[1]])
+def isEnemy(move):
+    return chess_isEnemy(g_board[move[0]][move[1]])
+
 def chess_isValid(intX, intY):
     if intX < 0:
         return False
-
-    elif intX > 4:
+    elif intX > numX-1:
         return False
-
     if intY < 0:
         return False
-
-    elif intY > 5:
+    elif intY > numY-1:
         return False
-
     return True
 
 
 # with reference to the state of the game, return whether the provided argument is a piece from the side not on move - note that we could but should not use the other is() functions in here but probably
 def chess_isEnemy(strPiece):
-    assert(len(strPiece) == 1)
+    if(DEBUG):
+        assert(len(strPiece) == 1)
     #If white, black is enemy and vice versa
     if(g_whosTurn == "W"):
         if(strPiece.islower()):
@@ -131,7 +173,8 @@ def chess_isEnemy(strPiece):
 
 # with reference to the state of the game, return whether the provided argument is a piece from the side on move - note that we could but should not use the other is() functions in here but probably
 def chess_isOwn(strPiece):
-    assert(len(strPiece) == 1)
+    if(DEBUG):
+        assert(len(strPiece) == 1)
     #If white, black is enemy and vice versa
     if(g_whosTurn == "W"):
         if(strPiece.isupper()):
@@ -144,33 +187,210 @@ def chess_isOwn(strPiece):
         else:
             return False
 
-
 # return whether the provided argument is not a piece / is an empty field - note that we could but should not use the other is() functions in here but probably
 def chess_isNothing(strPiece):
-    assert(len(strPiece) == 1)
+    if(DEBUG):
+        assert(len(strPiece) == 1)
     if(strPiece == '.'):
         return True
     else:
         return False
 
+# with reference to the state of the game, return the the evaluation score of the side on move - note that positive means an advantage while negative means a disadvantage
 def chess_eval():
-    # with reference to the state of the game, return the the evaluation score of the side on move - note that positive means an advantage while negative means a disadvantage
+    evalScore = int(0) #API requires this value to be an integer
+    #Eval is associated with the remaining pieces left in the game
+    #Depending on who's turn it is
+    for i in range(numY):
+        for pieceVal in g_board[i]:
+            #Check for empty space first
+            if(chess_isNothing(pieceVal)):
+                pass
+            #Check for own piece
+            elif(chess_isOwn(pieceVal)):
+                evalScore += pieceToPoint.get(pieceVal.lower())
+            elif(chess_isEnemy(pieceVal)):
+                evalScore -= pieceToPoint.get(pieceVal.lower())
+            else:
+                #Sanity check
+                assert(0)
+    return evalScore
 
-    return 0
+#Code for tracing rays given a direction
+def generateRayMoves(startPos, rayDirection):
+    (yDiff, xDiff) = rayDirection
+    (yPos, xPos) = startPos
+    outPos = []
+    while(True):
+        #Update new position
+        yPos = yPos + yDiff
+        xPos = xPos + xDiff
+        #If new position is not valid, break
+        if(not isValid((yPos, xPos))):
+            break
+        #If empty, add and continue loop
+        if(isEmpty((yPos, xPos))):
+            outPos.append((yPos, xPos))
+        #If enemy, add current position and break
+        elif(isEnemy((yPos, xPos))):
+            outPos.append((yPos, xPos))
+            break
+        #Otherwise, own piece. Break
+        else:
+            break
+    return outPos
 
+#Generates moves for piece inVal at position pos
+def generateValidMoves(inVal, pos):
+    if DEBUG:
+        assert(chess_isOwn(inVal))
+        assert(isOwn(pos))
+
+    posOutputs = []
+    (yPos, xPos) = pos
+
+    #Pawns
+    if(inVal == 'p' or inVal == 'P'):
+        #Black pawns
+        if(inVal == 'p'):
+            yDiff = 1
+        #White pawns
+        else:
+            yDiff = -1
+
+        #Black pawns can move vertically by 1
+        move = (yPos + yDiff, xPos)
+        #Python is short-circuit, so checking for validity
+        #first will not execute second statement
+        if(isValid(move) and isEmpty(move)):
+            posOutputs.append(move)
+
+        #capture diagonally
+        move = (yPos + yDiff, xPos + 1)
+        if(isValid(move) and isEnemy(move)):
+            posOutputs.append(move)
+        move = (yPos + yDiff, xPos - 1)
+        if(isValid(move) and isEnemy(move)):
+            posOutputs.append(move)
+
+    #Kings
+    elif(inVal == 'k' or inVal == 'K'):
+        for yDiff in range(-1, 2, 1):
+            for xDiff in range(-1, 2, 1):
+                #Skip the case where both yDiff and xDiff is 0
+                if(yDiff == 0 and xDiff == 0):
+                    continue
+                move = (yPos + yDiff, xPos + xDiff)
+                if(isValid(move) and (isEmpty(move) or isEnemy(move))):
+                    posOutputs.append(move)
+
+    #Queens
+    elif(inVal == 'q' or inVal == 'Q'):
+        #Left
+        posOutputs.extend(generateRayMoves(pos, (0, -1)))
+        #Right
+        posOutputs.extend(generateRayMoves(pos, (0, 1)))
+        #Up
+        posOutputs.extend(generateRayMoves(pos, (-1, 0)))
+        #Down
+        posOutputs.extend(generateRayMoves(pos, (1, 0)))
+        #UpLeft
+        posOutputs.extend(generateRayMoves(pos, (-1, -1)))
+        #UpRight
+        posOutputs.extend(generateRayMoves(pos, (-1, 1)))
+        #DownLeft
+        posOutputs.extend(generateRayMoves(pos, (1, -1)))
+        #DownRight
+        posOutputs.extend(generateRayMoves(pos, (1, 1)))
+
+    #Bishops
+    elif(inVal == 'b' or inVal == 'B'):
+        #UpLeft
+        posOutputs.extend(generateRayMoves(pos, (-1, -1)))
+        #UpRight
+        posOutputs.extend(generateRayMoves(pos, (-1, 1)))
+        #DownLeft
+        posOutputs.extend(generateRayMoves(pos, (1, -1)))
+        #DownRight
+        posOutputs.extend(generateRayMoves(pos, (1, 1)))
+        #Additional rule for moving one spot to the left/right/up/down
+        #Can't capture piece moving that direction
+        #Up
+        move = (yPos - 1, xPos)
+        if(isValid(move) and (isEmpty(move))):
+            posOutputs.append(move)
+        #Down
+        move = (yPos + 1, xPos)
+        if(isValid(move) and (isEmpty(move))):
+            posOutputs.append(move)
+        #Left
+        move = (yPos, xPos - 1)
+        if(isValid(move) and (isEmpty(move))):
+            posOutputs.append(move)
+        #Right
+        move = (yPos, xPos + 1)
+        if(isValid(move) and (isEmpty(move))):
+            posOutputs.append(move)
+
+    #Rook
+    elif(inVal == 'r' or inVal == 'R'):
+        #Left
+        posOutputs.extend(generateRayMoves(pos, (0, -1)))
+        #Right
+        posOutputs.extend(generateRayMoves(pos, (0, 1)))
+        #Up
+        posOutputs.extend(generateRayMoves(pos, (-1, 0)))
+        #Down
+        posOutputs.extend(generateRayMoves(pos, (1, 0)))
+
+    #Knight
+    elif(inVal == 'n' or inVal == 'N'):
+        #L shapes
+        #Top Left
+        move = (yPos-1, xPos-2)
+        if(isValid(move) and (isEmpty(move) or isEnemy(move))):
+            posOutputs.append(move)
+        move = (yPos-2, xPos-1)
+        if(isValid(move) and (isEmpty(move) or isEnemy(move))):
+            posOutputs.append(move)
+
+        #Top Right
+        move = (yPos-1, xPos+2)
+        if(isValid(move) and (isEmpty(move) or isEnemy(move))):
+            posOutputs.append(move)
+        move = (yPos-2, xPos+1)
+        if(isValid(move) and (isEmpty(move) or isEnemy(move))):
+            posOutputs.append(move)
+
+        #Bottom Left
+        move = (yPos+1, xPos-2)
+        if(isValid(move) and (isEmpty(move) or isEnemy(move))):
+            posOutputs.append(move)
+        move = (yPos+2, xPos-1)
+        if(isValid(move) and (isEmpty(move) or isEnemy(move))):
+            posOutputs.append(move)
+
+        #Bottom Right
+        move = (yPos+1, xPos+2)
+        if(isValid(move) and (isEmpty(move) or isEnemy(move))):
+            posOutputs.append(move)
+        move = (yPos+2, xPos+1)
+        if(isValid(move) and (isEmpty(move) or isEnemy(move))):
+            posOutputs.append(move)
+    return posOutputs
 
 # with reference to the state of the game and return the possible moves - one example is given below - note that a move has exactly 6 characters
 def chess_moves():
     strOut = []
-
-    strOut.append('a2-a3\n')
-    strOut.append('b2-b3\n')
-    strOut.append('c2-c3\n')
-    strOut.append('d2-d3\n')
-    strOut.append('e2-e3\n')
-    strOut.append('b1-a3\n')
-    strOut.append('b1-c3\n')
-
+    #Loop through pieces
+    for yIdx in range(numY):
+        for xIdx, pieceVal in enumerate(g_board[yIdx]):
+            #Generate list of moves per own piece
+            if(chess_isOwn(pieceVal)):
+                movesList = generateValidMoves(pieceVal, (yIdx, xIdx))
+                for move in movesList:
+                    moveStr = idxToMove((yIdx, xIdx)) + "-" + idxToMove(move) + "\n"
+                    strOut.append(moveStr)
     return strOut
 
 
@@ -186,10 +406,46 @@ def chess_movesEvaluated():
     return []
 
 
+# perform the supplied move (for example 'a5-a4\n') and update the state of the game / your internal variables accordingly - note that it advised to do a sanity check of the supplied move
 def chess_move(strIn):
-    # perform the supplied move (for example 'a5-a4\n') and update the state of the game / your internal variables accordingly - note that it advised to do a sanity check of the supplied move
+    #Updating global variables, so need these definitions
+    global g_board
+    global g_turnNum
+    global g_whosTurn
 
-    pass
+    #Parse string for a src and target positions
+    srcStr = strIn[0:2]
+    dstStr = strIn[3:5]
+
+    #Convert to index
+    srcMove = moveToIdx(srcStr)
+    dstMove = moveToIdx(dstStr)
+
+    #Sanity checks
+    if(DEBUG):
+        assert(isOwn(srcMove))
+        moves = generateValidMoves(g_board[srcMove[0]][srcMove[1]], srcMove)
+        assert(dstMove in moves)
+
+    #Move piece
+    g_board[dstMove[0]][dstMove[1]] = g_board[srcMove[0]][srcMove[1]]
+    g_board[srcMove[0]][srcMove[1]] = '.'
+
+    #Check for pawn promotions
+    if(g_board[dstMove[0]][dstMove[1]] == 'p' and dstMove[0] == numY - 1):
+        g_board[dstMove[0]][dstMove[1]] = 'q'
+    elif(g_board[dstMove[0]][dstMove[1]] == 'P' and dstMove[0] == 0):
+        g_board[dstMove[0]][dstMove[1]] = 'Q'
+
+    #Update turnNum and whosTurn
+    #Note that turnNum only increments after black's turn
+    if(g_whosTurn == "W"):
+        g_whosTurn = "B"
+    else:
+        g_whosTurn = "W"
+        g_turnNum += 1
+
+    #TODO implement data structure for undoing
 
 
 def chess_moveRandom():
@@ -220,3 +476,12 @@ def chess_undo():
     # undo the last move and update the state of the game / your internal variables accordingly - note that you need to maintain an internal variable that keeps track of the previous history for this
 
     pass
+
+
+#if __name__ == "__main__":
+#    chess_reset()
+#    chess_move('a2-a3\n')
+#    outStr = chess_moves()
+#    print outStr
+#    pdb.set_trace()
+
