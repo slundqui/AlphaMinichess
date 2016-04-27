@@ -129,10 +129,6 @@ def chess_boardSet(strIn):
 
 # determine the winner of the current state of the game and return '?' or '=' or 'W' or 'B' - note that we are returning a character and not a string
 def chess_winner():
-    #If move number is greater than 40, the game is a draw
-    if(g_turnNum > maxTurnsDraw):
-        return '='
-
     #Check if a k or K DOES NOT exist on board
     #Capital letters are white, lowercase letters are black
     #Need to loop through y loop
@@ -145,11 +141,18 @@ def chess_winner():
             whiteKFound = True
 
     if(not blackKFound):
-        return 'W'
+        winner = 'W'
     elif(not whiteKFound):
-        return 'B'
+        winner = 'B'
     else:
-        return '?'
+        winner = '?'
+
+    #If move number is greater than 40, the game is a draw
+    if(g_turnNum > maxTurnsDraw and winner == "?"):
+        return '='
+    else:
+        return winner
+
 
 #Various wrapper functions for taking tuples as moves
 def isValid(move):
@@ -499,15 +502,21 @@ def chess_move(strIn):
 
 def chess_moveRandom():
     possMoves = chess_movesShuffled()
-    targetMove = possMoves[0]
-    chess_move(targetMove)
+    if(len(possMoves)):
+        targetMove = possMoves[0]
+        chess_move(targetMove)
+    else:
+        targetMove = ""
     return targetMove
 
 # perform a greedy move and return it - one example output is given below - note that you can call the chess_movesEvaluated() function as well as the chess_move() function in here
 def chess_moveGreedy():
     possMoves = chess_movesEvaluated()
-    targetMove = possMoves[0]
-    chess_move(targetMove)
+    if(len(possMoves)):
+        targetMove = possMoves[0]
+        chess_move(targetMove)
+    else:
+        targetMove = ""
     return targetMove
 
 
