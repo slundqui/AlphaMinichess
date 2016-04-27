@@ -1,0 +1,1 @@
+Please ignore setup.py for now. This is for future implementation of using cython for compiling chess.py.

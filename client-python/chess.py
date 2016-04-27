@@ -17,12 +17,12 @@ maxTurnsDraw = 40
 #Range goes from 1 to 100 with the exception of the king
 #TODO, adjust this with maybe the positions of each piece as well
 pieceToPoint= {
-    'k': 100000,
-    'q': 100,
-    'b': 40,
-    'n': 20,
-    'r': 50,
-    'p': 10
+    'k': 10000,
+    'q': 10,
+    'b': 4,
+    'n': 4,
+    'r': 5,
+    'p': 1
 }
 
 #Global state variables
@@ -30,6 +30,19 @@ pieceToPoint= {
 g_board = [["." for i in range(numX)] for j in range(numY)]
 g_turnNum = 1
 g_whosTurn = "W"
+
+#Data structure for storing history of moves
+g_moveHistory = []
+
+#Function to return point diff for moving into "move"
+def getPointDiff(move):
+    if(isEmpty(move)):
+        return 0
+    elif(isEnemy(move)):
+        return pieceToPoint[g_board[move[0]][move[1]].lower()]
+    else:
+        #Illegal move
+        assert(0)
 
 #Function to change from a string to an index, e.g. a1 to (5, 0)
 def moveToIdx(inStr):
@@ -62,6 +75,7 @@ def chess_reset():
     global g_board
     global g_turnNum
     global g_whosTurn
+    global g_moveHistory
     #Lowercase is black, uppercase is white
     g_board = [['k', 'q', 'b', 'n', 'r'],
                ['p', 'p', 'p', 'p', 'p'],
@@ -71,10 +85,10 @@ def chess_reset():
                ['R', 'N', 'B', 'Q', 'K']]
     g_turnNum = 1
     g_whosTurn = 'W'
+    g_moveHistory = []
 
 # return the state of the game - one example is given below - note that the state has exactly 40 or 41 characters
 def chess_boardGet():
-
     strOut = ''
     strOut += str(g_turnNum) + " " + g_whosTurn + "\n"
     #Rows first
@@ -92,6 +106,10 @@ def chess_boardSet(strIn):
     global g_board
     global g_turnNum
     global g_whosTurn
+    global g_moveHistory
+
+    #Clear boardSet
+    g_moveHistory = []
 
     #Split string by newline
     strSplit = strIn.split("\n")
@@ -206,7 +224,7 @@ def chess_eval():
             #Check for empty space first
             if(chess_isNothing(pieceVal)):
                 pass
-            #Check for own piece
+            #We subtract from the score for every enemy piece, and vice versa
             elif(chess_isOwn(pieceVal)):
                 evalScore += pieceToPoint.get(pieceVal.lower())
             elif(chess_isEnemy(pieceVal)):
@@ -214,6 +232,7 @@ def chess_eval():
             else:
                 #Sanity check
                 assert(0)
+    #Score is the absence of pieces
     return evalScore
 
 #Code for tracing rays given a direction
@@ -269,6 +288,7 @@ def generateValidMoves(inVal, pos):
         move = (yPos + yDiff, xPos + 1)
         if(isValid(move) and isEnemy(move)):
             posOutputs.append(move)
+
         move = (yPos + yDiff, xPos - 1)
         if(isValid(move) and isEnemy(move)):
             posOutputs.append(move)
@@ -276,8 +296,7 @@ def generateValidMoves(inVal, pos):
     #Kings
     elif(inVal == 'k' or inVal == 'K'):
         for yDiff in range(-1, 2, 1):
-            for xDiff in range(-1, 2, 1):
-                #Skip the case where both yDiff and xDiff is 0
+            for xDiff in range(-1, 2, 1): #Skip the case where both yDiff and xDiff is 0
                 if(yDiff == 0 and xDiff == 0):
                     continue
                 move = (yPos + yDiff, xPos + xDiff)
@@ -394,16 +413,38 @@ def chess_moves():
     return strOut
 
 
+# with reference to the state of the game, determine the possible moves and shuffle them before returning them- note that you can call the chess_moves() function in here
 def chess_movesShuffled():
-    # with reference to the state of the game, determine the possible moves and shuffle them before returning them- note that you can call the chess_moves() function in here
+    #Generate all possible moves
+    movesList = chess_moves()
+    #Shuffle and return
+    random.shuffle(movesList)
+    return movesList
 
-    return []
-
-
+# with reference to the state of the game, determine the possible moves and sort them in order of an increasing evaluation score before returning them - note that you can call the chess_movesShuffled() function in here
 def chess_movesEvaluated():
-    # with reference to the state of the game, determine the possible moves and sort them in order of an increasing evaluation score before returning them - note that you can call the chess_movesShuffled() function in here
+    #Generate all possible moves, but we want to shuffle them in case there are ties
+    movesList = chess_movesShuffled()
+    #We calculate point differentials
+    pointDiffList = [getPointDiff(moveToIdx(m[3:5])) for m in movesList]
 
-    return []
+    #Check for pawn promotions
+    for (i, move) in enumerate(movesList):
+        srcIdx = moveToIdx(move[0:2])
+        dstIdx = moveToIdx(move[3:5])
+        if((g_board[srcIdx[0]][srcIdx[1]] == 'p' and dstIdx[0] == numY-1) or #black pawn
+           (g_board[srcIdx[0]][srcIdx[1]] == 'P' and dstIdx[0] == 0)): #White pawn
+              #Point differential is any captures plus
+              #losing a pawn and gaining a queen
+              pointDiffList[i] += pieceToPoint['q'] - pieceToPoint['p']
+
+    #We want to sort this list from largest (biggest capture) to smallest (smallest capture)
+    #but we only want the indices
+    sortIdx = [i[0] for i in sorted(enumerate(pointDiffList), key=lambda x:x[1], reverse=True)]
+    #Return new movesList with sortIdx
+    outList = [movesList[i] for i in sortIdx]
+
+    return outList
 
 
 # perform the supplied move (for example 'a5-a4\n') and update the state of the game / your internal variables accordingly - note that it advised to do a sanity check of the supplied move
@@ -412,6 +453,7 @@ def chess_move(strIn):
     global g_board
     global g_turnNum
     global g_whosTurn
+    global g_moveHistory
 
     #Parse string for a src and target positions
     srcStr = strIn[0:2]
@@ -423,12 +465,22 @@ def chess_move(strIn):
 
     #Sanity checks
     if(DEBUG):
+        #This breaks the system test for chess_movesEvaluated
         assert(isOwn(srcMove))
         moves = generateValidMoves(g_board[srcMove[0]][srcMove[1]], srcMove)
         assert(dstMove in moves)
 
+
+    #Get source and dest pieces
+    srcPiece = g_board[srcMove[0]][srcMove[1]]
+    dstPiece = g_board[dstMove[0]][dstMove[1]]
+
+    #Store move into stack
+    #Stack element contains a 4 tuple: (srcPiece, srcMove, dstPiece, dstMove)
+    g_moveHistory.append((srcPiece, srcMove, dstPiece, dstMove))
+
     #Move piece
-    g_board[dstMove[0]][dstMove[1]] = g_board[srcMove[0]][srcMove[1]]
+    g_board[dstMove[0]][dstMove[1]] = srcPiece
     g_board[srcMove[0]][srcMove[1]] = '.'
 
     #Check for pawn promotions
@@ -445,19 +497,18 @@ def chess_move(strIn):
         g_whosTurn = "W"
         g_turnNum += 1
 
-    #TODO implement data structure for undoing
-
-
 def chess_moveRandom():
-    # perform a random move and return it - one example output is given below - note that you can call the chess_movesShuffled() function as well as the chess_move() function in here
+    possMoves = chess_movesShuffled()
+    targetMove = possMoves[0]
+    chess_move(targetMove)
+    return targetMove
 
-    return 'a2-a3\n'
-
-
+# perform a greedy move and return it - one example output is given below - note that you can call the chess_movesEvaluated() function as well as the chess_move() function in here
 def chess_moveGreedy():
-    # perform a greedy move and return it - one example output is given below - note that you can call the chess_movesEvaluated() function as well as the chess_move() function in here
-
-    return 'a2-a3\n'
+    possMoves = chess_movesEvaluated()
+    targetMove = possMoves[0]
+    chess_move(targetMove)
+    return targetMove
 
 
 def chess_moveNegamax(intDepth, intDuration):
@@ -471,12 +522,32 @@ def chess_moveAlphabeta(intDepth, intDuration):
 
     return 'a2-a3\n'
 
-
+# undo the last move and update the state of the game / your internal variables accordingly - note that you need to maintain an internal variable that keeps track of the previous history for this
 def chess_undo():
-    # undo the last move and update the state of the game / your internal variables accordingly - note that you need to maintain an internal variable that keeps track of the previous history for this
+    #Updating global variables, so need these definitions
+    global g_board
+    global g_turnNum
+    global g_whosTurn
+    global g_moveHistory
+    if(len(g_moveHistory) == 0):
+        #Do nothing
+        return
 
-    pass
+    #Update turnNum and whosTurn
+    #Note that turnNum only decrements after whites's turn
+    if(g_whosTurn == "B"):
+        g_whosTurn = "W"
+    else:
+        g_whosTurn = "B"
+        g_turnNum -= 1
 
+    #Pop move off stack
+    (srcPiece, srcMove, dstPiece, dstMove) = g_moveHistory.pop()
+    #Place srcPiece first, as srcMove is guarenteed to be currently '.'
+    if DEBUG:
+        assert(isEmpty(srcMove))
+    g_board[srcMove[0]][srcMove[1]] = srcPiece
+    g_board[dstMove[0]][dstMove[1]] = dstPiece
 
 #if __name__ == "__main__":
 #    chess_reset()
