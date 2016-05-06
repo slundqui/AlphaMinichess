@@ -520,11 +520,35 @@ def chess_moveGreedy():
     return targetMove
 
 
+#Depth first search
+def rec_negamax(depth):
+    #If we run out of depth or winners, we evaluate the current board and return
+    if(depth == 0 or chess_winner() != "?"):
+        return chess_eval()
+    score = int(-30000)
+    moves = chess_movesEvaluated()
+    for move in moves:
+        chess_move(move)
+        score = max(score, -rec_negamax(depth-1))
+        chess_undo()
+    return score
+
 def chess_moveNegamax(intDepth, intDuration):
     # perform a negamax move and return it - one example output is given below - note that you can call the the other functions in here
-
-    return 'a2-a3\n'
-
+    score = int(-30000)
+    moves = chess_movesEvaluated()
+    if(len(moves) == 0):
+        return ""
+    bestMove = moves[0]
+    for move in moves:
+        chess_move(move)
+        recScore = -rec_negamax(intDepth-1)
+        chess_undo()
+        if(recScore > score):
+            bestMove = move
+            score = recScore
+    chess_move(bestMove)
+    return bestMove
 
 def chess_moveAlphabeta(intDepth, intDuration):
     # perform a alphabeta move and return it - one example output is given below - note that you can call the the other functions in here

@@ -1,1 +1,2 @@
-Please ignore setup.py for now. This is for future implementation of using cython for compiling chess.py.
+We use cython to compile python code for more efficient python
+To run, please run make before running main.py

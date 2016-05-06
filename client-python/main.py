@@ -1,5 +1,5 @@
 import random
-#from chess import *
+from chess import *
 
 ##########################################################
 
@@ -8,7 +8,7 @@ main_strName = "AlphaMinichess" # CHANGE THIS - REQUIRED
 
 ##########################################################
 
-exec(open("chess.py").read())
+#exec(open("chess.py").read())
 
 exec(open("zeromq.py").read())
 
