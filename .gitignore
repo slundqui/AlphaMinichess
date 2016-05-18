@@ -3,3 +3,5 @@ framework/framework
 client-python/build
 client-python/chess.c
 client-python/chess.so
+client-python/dataset
+client-python/*.pyc

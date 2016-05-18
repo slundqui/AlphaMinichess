@@ -17,7 +17,7 @@ maxTurnsDraw = 40
 #Range goes from 1 to 100 with the exception of the king
 #TODO, adjust this with maybe the positions of each piece as well
 pieceToPoint= {
-    'k': 10000,
+    'k': 100,
     'q': 10,
     'b': 4,
     'n': 4,
@@ -37,6 +37,9 @@ g_moveHistory = []
 #Function to get whosTurn as a character
 def getWhosTurn():
     return g_whosTurn
+
+def getBoard():
+    return g_board
 
 def setSeed(inSeed):
     random.seed(inSeed)
@@ -571,18 +574,29 @@ def rec_alphabeta(depth, alpha, beta):
             break
     return score
 
+def evalMovesAlphabeta(intDepth):
+    moves = chess_movesEvaluated()
+    moveScore = [None for i in range(len(moves))]
+    if(len(moves) == 0):
+        return ""
+    for i, move in enumerate(moves):
+        chess_move(move)
+        moveScore[i] = -rec_alphabeta(intDepth-1, -float("inf"), float("inf"))
+        chess_undo()
+    return (moves, moveScore)
+
+# perform an alphabeta move and return it - one example output is given below - note that you can call the the other functions in here
 def chess_moveAlphabeta(intDepth, intDuration):
     #intDepth is negative if in tournament
     if(intDepth < 0):
         #Defaults to 7
         intDepth = 7
-        #If we have less than 30 seconds left, we use 5 depth
+        #If we have less than 30 seconds left, we use 6 depth
         if(intDuration <= 30000):
-            intDepth = 5
-        #If we have 5 seconds left, use depth of 3, which is pretty much instant
+            intDepth = 6
+        #If we have 5 seconds left, use depth of 4, which is pretty much instant
         elif(intDuration <= 5000):
-            intDepht = 3
-    # perform a negamax move and return it - one example output is given below - note that you can call the the other functions in here
+            intDepht = 4
     score = -float("inf")
     moves = chess_movesEvaluated()
     if(len(moves) == 0):
