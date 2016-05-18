@@ -4,7 +4,7 @@ import pdb
 ##########################################################
 
 #Debug variable, turn off for speed
-DEBUG = True
+DEBUG = False
 
 #Parameters
 #Chess board is 6x5 board
@@ -34,6 +34,13 @@ g_whosTurn = "W"
 #Data structure for storing history of moves
 g_moveHistory = []
 
+#Function to get whosTurn as a character
+def getWhosTurn():
+    return g_whosTurn
+
+def setSeed(inSeed):
+    random.seed(inSeed)
+
 #Function to return point diff for moving into "move"
 def getPointDiff(move):
     if(isEmpty(move)):
@@ -43,6 +50,7 @@ def getPointDiff(move):
     else:
         #Illegal move
         assert(0)
+
 
 #Function to change from a string to an index, e.g. a1 to (5, 0)
 def moveToIdx(inStr):
@@ -468,7 +476,6 @@ def chess_move(strIn):
 
     #Sanity checks
     if(DEBUG):
-        #This breaks the system test for chess_movesEvaluated
         assert(isOwn(srcMove))
         moves = generateValidMoves(g_board[srcMove[0]][srcMove[1]], srcMove)
         assert(dstMove in moves)
@@ -565,6 +572,16 @@ def rec_alphabeta(depth, alpha, beta):
     return score
 
 def chess_moveAlphabeta(intDepth, intDuration):
+    #intDepth is negative if in tournament
+    if(intDepth < 0):
+        #Defaults to 7
+        intDepth = 7
+        #If we have less than 30 seconds left, we use 5 depth
+        if(intDuration <= 30000):
+            intDepth = 5
+        #If we have 5 seconds left, use depth of 3, which is pretty much instant
+        elif(intDuration <= 5000):
+            intDepht = 3
     # perform a negamax move and return it - one example output is given below - note that you can call the the other functions in here
     score = -float("inf")
     moves = chess_movesEvaluated()
