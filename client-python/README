@@ -1,2 +1,2 @@
 We use cython to compile python code for more efficient python
-To run, please run make before running main.py
+To run, please run "make" before running main.py

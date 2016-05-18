@@ -519,13 +519,12 @@ def chess_moveGreedy():
         targetMove = ""
     return targetMove
 
-
 #Depth first search
 def rec_negamax(depth):
     #If we run out of depth or winners, we evaluate the current board and return
     if(depth == 0 or chess_winner() != "?"):
         return chess_eval()
-    score = int(-30000)
+    score = -float("inf")
     moves = chess_movesEvaluated()
     for move in moves:
         chess_move(move)
@@ -535,7 +534,7 @@ def rec_negamax(depth):
 
 def chess_moveNegamax(intDepth, intDuration):
     # perform a negamax move and return it - one example output is given below - note that you can call the the other functions in here
-    score = int(-30000)
+    score = -float("inf")
     moves = chess_movesEvaluated()
     if(len(moves) == 0):
         return ""
@@ -550,10 +549,37 @@ def chess_moveNegamax(intDepth, intDuration):
     chess_move(bestMove)
     return bestMove
 
-def chess_moveAlphabeta(intDepth, intDuration):
-    # perform a alphabeta move and return it - one example output is given below - note that you can call the the other functions in here
+def rec_alphabeta(depth, alpha, beta):
+    #If we run out of depth or winners, we evaluate the current board and return
+    if(depth == 0 or chess_winner() != "?"):
+        return chess_eval()
+    score = -float("inf")
+    moves = chess_movesEvaluated()
+    for move in moves:
+        chess_move(move)
+        score = max(score, -rec_alphabeta(depth-1, -beta, -alpha))
+        chess_undo()
+        alpha = max(alpha, score)
+        if(alpha >= beta):
+            break
+    return score
 
-    return 'a2-a3\n'
+def chess_moveAlphabeta(intDepth, intDuration):
+    # perform a negamax move and return it - one example output is given below - note that you can call the the other functions in here
+    score = -float("inf")
+    moves = chess_movesEvaluated()
+    if(len(moves) == 0):
+        return ""
+    bestMove = moves[0]
+    for move in moves:
+        chess_move(move)
+        recScore = -rec_alphabeta(intDepth-1, -float("inf"), float("inf"))
+        chess_undo()
+        if(recScore > score):
+            bestMove = move
+            score = recScore
+    chess_move(bestMove)
+    return bestMove
 
 # undo the last move and update the state of the game / your internal variables accordingly - note that you need to maintain an internal variable that keeps track of the previous history for this
 def chess_undo():
