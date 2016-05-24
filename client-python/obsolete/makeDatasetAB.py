@@ -2,34 +2,45 @@ from chess import *
 from util import *
 import time
 import numpy as np
+import random
 
 #Here, an epoch is generated from one game
 epochs = 100
 
 #How to initialize the board. Either random or through alphabeta
-boardInit = "random" #"alphabeta"
+boardInit = "random"
 #This is number of moves as defined by the board, such that it's always whites move after init
-numInitMoves = 20
+numInitMoves = 30
 abDepth = 5 #Depth of alphabeta to train on
+initDepth = 3
 
-outDataFilename= "dataset/trainData.npy"
-outGTFilename= "dataset/trainGT.npy"
+outDataFilename= "testDataset/r5Data_2.npy"
+outGTFilename= "testDataset/r5GT_2.npy"
 
 #We store only index for space, will expand when read
 trainData = None
 trainGT = None
 
 for e in range(epochs):
-    print "Epoch", e
+    print "Epoch", e, "out of", epochs
     #Reset game
     chess_reset()
-    for i in range(numInitMoves):
+    #Numbers must be even to make sure dataset is always white
+    randNum = random.randint(0, numInitMoves-1)
+    for i in range(randNum):
         if boardInit == "random":
             chess_moveRandom()
+            chess_moveRandom()
         elif boardInit == "alphabeta":
-            chess_moveAlphabeta(abDepth, 1000000)
+            chess_moveAlphabeta(initDepth, 1000000)
+            chess_moveAlphabeta(initDepth, 1000000)
         else:
             assert(0)
+    #If someone wins, skip
+    if(chess_winner() != "?"):
+        continue
+    assert(getWhosTurn() == "W")
+
     #Generate moves and moveScores
     (moves, score) = evalMovesAlphabeta(abDepth)
     #Write score and state for each move

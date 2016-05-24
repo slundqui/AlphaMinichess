@@ -1,5 +1,8 @@
 import random
 import pdb
+from tfMLP import evalMLP
+from util import *
+import numpy as np
 
 ##########################################################
 
@@ -12,15 +15,24 @@ numY = 6
 numX = 5
 maxTurnsDraw = 40
 
+#Using MLP as eval flag
+MLPEval = True
+MLPLoadFilename = "checkpointsWins/saved/save_2.ckpt"
+MLPObj = evalMLP(None) #No dataobj, as we're evaluating on the fly
+MLPObj.loadModel(MLPLoadFilename)
+
+MLPEvalWeight = 150
+cheapEvalWeight = 10
+
 #Defines the score for each piece.
 #Note that since the game is symetrical, only lowercase pieces are evaluated
 #Range goes from 1 to 100 with the exception of the king
 #TODO, adjust this with maybe the positions of each piece as well
 pieceToPoint= {
-    'k': 100,
+    'k': 1000,
     'q': 10,
     'b': 4,
-    'n': 4,
+    'n': 3,
     'r': 5,
     'p': 1
 }
@@ -41,6 +53,12 @@ def getWhosTurn():
 def getBoard():
     return g_board
 
+def getHistory():
+    return g_moveHistory
+
+def getTurnNum():
+    return g_turnNum
+
 def setSeed(inSeed):
     random.seed(inSeed)
 
@@ -53,7 +71,6 @@ def getPointDiff(move):
     else:
         #Illegal move
         assert(0)
-
 
 #Function to change from a string to an index, e.g. a1 to (5, 0)
 def moveToIdx(inStr):
@@ -228,8 +245,29 @@ def chess_isNothing(strPiece):
     else:
         return False
 
+def setMLPEval(inBool):
+    global MLPEval
+    MLPEval = inBool
+
 # with reference to the state of the game, return the the evaluation score of the side on move - note that positive means an advantage while negative means a disadvantage
 def chess_eval():
+    #Allocate numpy array
+    inData = np.zeros((1, 6, 5, 13))
+
+    for i in range(6):
+        for j in range(5):
+            #If black's turn, swap pieces
+            inData[0, i, j, pieceToIdx[g_board[i][j]]] = 1
+
+    tmp = MLPObj.evalModel(inData)
+    score = round(tmp[0, 0] * MLPEvalWeight)
+    #use combination of cheap and mlp eval
+    #Eval always scores in terms of white
+    if(g_whosTurn == "B"):
+        score = -score
+    return score + cheapEvalWeight * cheap_eval()
+
+def cheap_eval():
     evalScore = int(0) #API requires this value to be an integer
     #Eval is associated with the remaining pieces left in the game
     #Depending on who's turn it is
@@ -533,7 +571,7 @@ def chess_moveGreedy():
 def rec_negamax(depth):
     #If we run out of depth or winners, we evaluate the current board and return
     if(depth == 0 or chess_winner() != "?"):
-        return chess_eval()
+        return cheap_eval()
     score = -float("inf")
     moves = chess_movesEvaluated()
     for move in moves:
@@ -562,7 +600,10 @@ def chess_moveNegamax(intDepth, intDuration):
 def rec_alphabeta(depth, alpha, beta):
     #If we run out of depth or winners, we evaluate the current board and return
     if(depth == 0 or chess_winner() != "?"):
-        return chess_eval()
+        if(MLPEval):
+            return chess_eval()
+        else:
+            return cheap_eval()
     score = -float("inf")
     moves = chess_movesEvaluated()
     for move in moves:
@@ -589,14 +630,24 @@ def evalMovesAlphabeta(intDepth):
 def chess_moveAlphabeta(intDepth, intDuration):
     #intDepth is negative if in tournament
     if(intDepth < 0):
-        #Defaults to 7
-        intDepth = 7
-        #If we have less than 30 seconds left, we use 6 depth
-        if(intDuration <= 30000):
-            intDepth = 6
-        #If we have 5 seconds left, use depth of 4, which is pretty much instant
-        elif(intDuration <= 5000):
-            intDepht = 4
+        #Defaults for tournament
+        if(MLPEval == False):
+            intDepth = 7
+            #If we have less than 30 seconds left, we use 6 depth
+            if(intDuration <= 30000):
+                intDepth = 6
+            #If we have 5 seconds left, use depth of 4, which is pretty much instant
+            elif(intDuration <= 5000):
+                intDepht = 4
+        else:
+            intDepth = 5
+            #If we have less than 30 seconds left, we use 6 depth
+            if(intDuration <= 30000):
+                intDepth = 4
+            #If we have 5 seconds left, use depth of 4, which is pretty much instant
+            elif(intDuration <= 5000):
+                intDepht = 2
+
     score = -float("inf")
     moves = chess_movesEvaluated()
     if(len(moves) == 0):

@@ -1,0 +1,7 @@
+checkpoints/
+checkpointsMLP
+*.pyc
+testDataset/
+tfOutput/
+trainDataset/
+
