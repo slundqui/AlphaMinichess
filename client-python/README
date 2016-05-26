@@ -1,2 +1,17 @@
-We use cython to compile python code for more efficient python
-To run, please run "make" before running main.py
+Additional prerequisites needed for python client:
+
+cython
+tensorflow
+
+We provide a brief guide to install tensorflow.
+
+Install Anaconda Python: https://www.continuum.io/downloads
+After installation, make sure the command "which python" and "which pip" points to the anaconda directory.
+Enter the following command:
+
+pip install --ignore-installed --upgrade https://storage.googleapis.com/tensorflow/linux/cpu/tensorflow-0.8.0-cp27-none-linux_x86_64.whl
+
+To test, type "import tensorflow" in python. If the import worked fine, you're good to go!
+
+After installation of tensorflow and cython, run "make" before running main.py.
+
