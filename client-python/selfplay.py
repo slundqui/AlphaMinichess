@@ -5,6 +5,8 @@ import time
 numGames = 10
 whiteWins = 0
 blackWins = 0
+whiteOutOfTime = 0
+blackOutOfTime = 0
 ties = 0
 
 for g in range(numGames):
@@ -23,10 +25,10 @@ for g in range(numGames):
         timeStart = time.clock()
         if(whosTurn == "W"):
             setMLPEval(False)
-            chess_moveAlphabeta(8, whiteTime)
+            chess_moveAlphabeta(-1, whiteTime)
         elif(whosTurn == "B"):
             setMLPEval(True)
-            chess_moveAlphabeta(5, blackTime)
+            chess_moveAlphabeta(-1, blackTime)
         else:
             assert(0)
         timeStop = time.clock()
@@ -44,12 +46,14 @@ for g in range(numGames):
         else:
             assert(0)
 
-        #if(whiteTime <= 0):
-        #    print "WHITE OUT OF TIME"
-        #    break
-        #if(blackTime <= 0):
-        #    print "BLACK OUT OF TIME"
-        #    break
+        if(whiteTime <= 0):
+            print "WHITE OUT OF TIME"
+            whiteOutOfTime += 1
+            break
+        if(blackTime <= 0):
+            print "BLACK OUT OF TIME"
+            blackOutOfTime += 1
+            break
 
         print boardState[:-1]
         print "timeTaken: ", timeE
@@ -67,5 +71,7 @@ for g in range(numGames):
 
     print "White (no-mlp) wins: ", whiteWins
     print "Black (mlp) wins: ", blackWins
+    print "White (no-mlp) out of time: ", whiteOutOfTime
+    print "Black (mlp) out of time: ", blackOutOfTime
     print "Ties: ", ties
 

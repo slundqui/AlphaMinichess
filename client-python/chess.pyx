@@ -638,15 +638,15 @@ def chess_moveAlphabeta(intDepth, intDuration):
                 intDepth = 6
             #If we have 5 seconds left, use depth of 4, which is pretty much instant
             elif(intDuration <= 5000):
-                intDepht = 4
+                intDepth = 4
         else:
-            intDepth = 5
+            intDepth = 4
             #If we have less than 30 seconds left, we use 6 depth
             if(intDuration <= 30000):
-                intDepth = 4
+                intDepth = 3
             #If we have 5 seconds left, use depth of 4, which is pretty much instant
             elif(intDuration <= 5000):
-                intDepht = 2
+                intDepth = 2
 
     score = -float("inf")
     moves = chess_movesEvaluated()
